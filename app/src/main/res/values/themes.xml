@@ -1,9 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.LiveTaskNotes" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.LiveTaskNotes" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- Primary brand color -->
         <item name="colorPrimary">@color/amber_primary</item>
         <item name="colorPrimaryVariant">@color/amber_dark</item>
         <item name="colorOnPrimary">@color/white</item>
+
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/accent_orange</item>
+        <item name="colorSecondaryVariant">@color/amber_dark</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <!-- Background and surface -->
+        <item name="android:colorBackground">@color/background_cream</item>
+        <item name="colorSurface">@color/card_background</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+
+        <!-- Status bar -->
         <item name="android:statusBarColor">@color/amber_dark</item>
+        <item name="android:navigationBarColor">@color/amber_dark</item>
+
+        <!-- Window background -->
+        <item name="android:windowBackground">@color/background_cream</item>
     </style>
 </resources>

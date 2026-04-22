@@ -1,5 +1,10 @@
 package com.example.livetasknotes;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -7,6 +12,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,8 +39,14 @@ public class MainActivity extends AppCompatActivity {
     private EditText etTask;
     private Button btnAdd, btnPrevDay, btnNextDay;
     private ListView lvTasks;
-    private TextView tvDate, tvEmpty;
+    private TextView tvDate, tvEmpty, tvProgressText, tvTeamCodeInfo;
+    private ProgressBar pbTaskProgress;
+    private Button btnLogout;
     private View inputRow;
+
+    // User Info
+    private String userName;
+    private String teamCode;
 
     // Firebase
     private DatabaseReference rootRef;
@@ -59,6 +71,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // ---- Load User Info ----
+        SharedPreferences prefs = getSharedPreferences("TaskAppPrefs", MODE_PRIVATE);
+        userName = prefs.getString("userName", null);
+        teamCode = prefs.getString("teamCode", null);
+
+        if (userName == null || teamCode == null) {
+            startActivity(new Intent(this, JoinTeamActivity.class));
+            finish();
+            return;
+        }
+
         // ---- Bind views ----
         etTask     = findViewById(R.id.etTask);
         btnAdd     = findViewById(R.id.btnAdd);
@@ -67,10 +90,30 @@ public class MainActivity extends AppCompatActivity {
         lvTasks    = findViewById(R.id.lvTasks);
         tvDate     = findViewById(R.id.tvDate);
         tvEmpty    = findViewById(R.id.tvEmpty);
+        tvProgressText = findViewById(R.id.tvProgressText);
+        pbTaskProgress = findViewById(R.id.pbTaskProgress);
         inputRow   = findViewById(R.id.inputRow);
+        tvTeamCodeInfo = findViewById(R.id.tvTeamCodeInfo);
+        btnLogout  = findViewById(R.id.btnLogout);
+
+        // ---- Setup Header ----
+        tvTeamCodeInfo.setText("Team Code: " + teamCode + " (Tap to copy)");
+
+        tvTeamCodeInfo.setOnClickListener(v -> {
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("Team Code", teamCode);
+            clipboard.setPrimaryClip(clip);
+            Toast.makeText(MainActivity.this, "Team Code Copied!", Toast.LENGTH_SHORT).show();
+        });
+
+        btnLogout.setOnClickListener(v -> {
+            prefs.edit().clear().apply();
+            startActivity(new Intent(MainActivity.this, JoinTeamActivity.class));
+            finish();
+        });
 
         // ---- Firebase root reference ----
-        rootRef = FirebaseDatabase.getInstance().getReference("daily_tasks");
+        rootRef = FirebaseDatabase.getInstance().getReference("teams").child(teamCode).child("daily_tasks");
 
         // ---- Date formatters ----
         dateKeyFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -106,18 +149,6 @@ public class MainActivity extends AppCompatActivity {
         btnNextDay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Don't allow navigating to future dates
-                Calendar tomorrow = Calendar.getInstance();
-                tomorrow.add(Calendar.DAY_OF_MONTH, 1);
-                Calendar check = (Calendar) selectedDate.clone();
-                check.add(Calendar.DAY_OF_MONTH, 1);
-
-                if (check.after(tomorrow)) {
-                    Toast.makeText(MainActivity.this,
-                            "Cannot go to future dates", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
                 selectedDate.add(Calendar.DAY_OF_MONTH, 1);
                 updateDateDisplay();
                 loadTasksForSelectedDate();
@@ -135,12 +166,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-                // Only allow adding tasks to today's date
-                if (!isToday()) {
-                    Toast.makeText(MainActivity.this,
-                            "You can only add tasks for today", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+                // No restriction on adding tasks to past or future dates
 
                 // Push a new task with text and done status
                 String dateKey = dateKeyFormat.format(selectedDate.getTime());
@@ -149,6 +175,7 @@ public class MainActivity extends AppCompatActivity {
                 Map<String, Object> taskData = new HashMap<>();
                 taskData.put("text", task);
                 taskData.put("done", false);
+                taskData.put("creator", userName);
                 newTaskRef.setValue(taskData);
 
                 etTask.setText("");
@@ -193,16 +220,16 @@ public class MainActivity extends AppCompatActivity {
         String dateStr = displayFormat.format(selectedDate.getTime());
         if (isToday()) {
             tvDate.setText("Today - " + dateStr);
-            inputRow.setVisibility(View.VISIBLE);
         } else {
             tvDate.setText(dateStr);
-            // Hide input row for past dates (optional: allow adding to past)
-            inputRow.setVisibility(View.VISIBLE);
         }
+        
+        // Ensure input row is always visible
+        inputRow.setVisibility(View.VISIBLE);
 
-        // Disable next button if we're on today
-        btnNextDay.setEnabled(!isToday());
-        btnNextDay.setAlpha(isToday() ? 0.4f : 1.0f);
+        // Always enable next button to allow navigating to future
+        btnNextDay.setEnabled(true);
+        btnNextDay.setAlpha(1.0f);
     }
 
     /**
@@ -245,8 +272,13 @@ public class MainActivity extends AppCompatActivity {
                         // Old format: just a string
                         text = child.getValue(String.class);
                     } else {
-                        // New format: { text: "...", done: true/false }
+                        // New format: { text: "...", done: true/false, creator: "..." }
                         text = child.child("text").getValue(String.class);
+                        String creator = child.child("creator").getValue(String.class);
+                        if (creator != null && !creator.isEmpty()) {
+                            text = creator + ": " + text;
+                        }
+                        
                         Boolean doneVal = child.child("done").getValue(Boolean.class);
                         done = (doneVal != null) ? doneVal : false;
                     }
@@ -273,6 +305,8 @@ public class MainActivity extends AppCompatActivity {
                     tvEmpty.setVisibility(View.GONE);
                     lvTasks.setVisibility(View.VISIBLE);
                 }
+
+                updateProgress();
             }
 
             @Override
@@ -284,5 +318,29 @@ public class MainActivity extends AppCompatActivity {
         };
 
         currentDateRef.addValueEventListener(currentListener);
+    }
+    /**
+     * Updates the progress bar and percentage text based on completed tasks.
+     */
+    private void updateProgress() {
+        int totalTasks = taskDoneList.size();
+        if (totalTasks == 0) {
+            pbTaskProgress.setProgress(0);
+            tvProgressText.setText("0%");
+            return;
+        }
+
+        int completedTasks = 0;
+        for (Boolean done : taskDoneList) {
+            if (done != null && done) {
+                completedTasks++;
+            }
+        }
+
+        int percentage = (completedTasks * 100) / totalTasks;
+        
+        // Ensure progress is updated on the UI thread (usually called from Firebase callback which runs on main thread, but safe practice)
+        pbTaskProgress.setProgress(percentage);
+        tvProgressText.setText(percentage + "%");
     }
 }

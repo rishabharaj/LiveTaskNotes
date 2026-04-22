@@ -13,19 +13,33 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
+
+        // Vector drawable support for older devices
+        vectorDrawables.useSupportLibrary = true
+    }
+
+    signingConfigs {
+        debug {
+            // Uses default debug keystore - always works for installation
+        }
     }
 
     buildTypes {
         release {
+            // Use debug signing for now so APK installs on phone
+            signingConfig signingConfigs.debug
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
+
+    // Ensure APK is generated (not just AAB)
+    android.buildFeatures.buildConfig = true
 }
 
 dependencies {

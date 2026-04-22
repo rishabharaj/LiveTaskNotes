@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Checklist icon centered in the 66x66 safe zone (from 21 to 87) -->
+
+    <!-- Line 1 bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M47,37 L76,37 L76,40 L47,40 Z"/>
+
+    <!-- Checkmark 1 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M33,40 L36,43 L42,35 L40,33 L36,39 L35,38 Z"/>
+
+    <!-- Line 2 bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M47,52 L70,52 L70,55 L47,55 Z"/>
+
+    <!-- Checkmark 2 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M33,55 L36,58 L42,50 L40,48 L36,54 L35,53 Z"/>
+
+    <!-- Line 3 bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M47,67 L73,67 L73,70 L47,70 Z"/>
+
+    <!-- Empty box 3 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,63 L42,63 L42,73 L32,73 Z M34,65 L34,71 L40,71 L40,65 Z"/>
+
+</vector>
