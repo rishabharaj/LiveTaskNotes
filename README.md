@@ -1,6 +1,6 @@
-# 📝 Live Task Notes — Daily Task Tracker with Firebase
+# 📝 Team-Based Live Task Notes — Collaborative Daily Task Tracker
 
-A single-screen Android app using **Firebase Realtime Database** to manage daily tasks with **checkboxes**, **date-wise history**, and **real-time sync**.
+An Android app using **Firebase Realtime Database** to manage daily tasks collaboratively. Users can join teams using a 6-digit code, share tasks, track progress, and sync everything in real-time.
 
 ---
 
@@ -8,35 +8,39 @@ A single-screen Android app using **Firebase Realtime Database** to manage daily
 
 | Feature | How it Works |
 |---------|-------------|
-| **Add Task** | Type → Tap "Add Task" → saves under today's date in Firebase |
-| **Checkbox (✅/☐)** | Tap task to mark done ✅, tap again to uncheck |
-| **Daily History** | ◀ / ▶ buttons to navigate between dates |
-| **Real-time Sync** | `ValueEventListener` auto-updates ListView |
-| **Delete Task** | Long-press → removes from Firebase instantly |
-| **Today Indicator** | Shows "Today - 22 Apr 2026" for current date |
-| **Empty State** | Shows message when a date has no tasks |
+| **Team Support** | Join a team using a unique Team Code. All members see the same tasks. |
+| **User Identity** | Tasks show the name of the creator (e.g., "Rahul: Fix the bug"). |
+| **Progress Bar** | Visual progress bar showing the percentage of completed tasks for the day. |
+| **Add Task** | Type → Tap "Add Task" → saves under the selected date in Firebase. |
+| **Checkbox (✅/☐)** | Tap task to mark done ✅, tap again to uncheck. |
+| **Daily History** | ◀ / ▶ buttons to navigate between dates (past and future dates allowed). |
+| **Real-time Sync** | `ValueEventListener` auto-updates ListView for all team members. |
+| **Delete Task** | Long-press → removes from Firebase instantly. |
+| **Copy Team Code** | Tap the Team Code in the header to copy it to the clipboard. |
+| **Logout** | Clear session and join a different team. |
 
 ### Technical Highlights
-- ✅ Zero custom classes — No custom Adapter/ViewHolder/Model
-- ✅ Default `ArrayAdapter<String>` with `simple_list_item_multiple_choice`
-- ✅ ALL logic in `MainActivity` — single file
-- ✅ Only 2 core files — `MainActivity.java` + `activity_main.xml`
-- ✅ Date-wise Firebase structure — Tasks organized by `yyyy-MM-dd`
+- ✅ `SharedPreferences` for managing user sessions and team codes.
+- ✅ Two Activities: `JoinTeamActivity` (Login) and `MainActivity` (Dashboard).
+- ✅ Real-time data syncing using Firebase `ValueEventListener`.
+- ✅ Date-wise and Team-wise Firebase structure.
 
 ---
 
 ## 🗄️ Firebase Database Structure
 
 ```
-daily_tasks/
-├── 2026-04-22/
-│   ├── -key1: { "text": "Complete homework", "done": true }
-│   └── -key2: { "text": "Buy groceries", "done": false }
-└── 2026-04-21/
-    └── -key3: { "text": "Submit report", "done": true }
+teams/
+└── ABC123/                              ← Team Code
+    └── daily_tasks/
+        ├── 2026-04-22/                  ← Date
+        │   ├── -key1: { "text": "Complete homework", "done": true, "creator": "Aman" }
+        │   └── -key2: { "text": "Buy groceries", "done": false, "creator": "Rohit" }
+        └── 2026-04-21/
+            └── -key3: { "text": "Submit report", "done": true, "creator": "Aman" }
 ```
 
-Each task has: `text` (String) and `done` (Boolean).
+Each task has: `text` (String), `done` (Boolean), and `creator` (String).
 
 ---
 
@@ -44,17 +48,18 @@ Each task has: `text` (String) and `done` (Boolean).
 
 ```
 LiveTaskNotes/
-├── build.gradle              ← Project-level (AGP 8.13.2)
-├── settings.gradle           ← Module settings
 ├── app/
 │   ├── build.gradle          ← Dependencies (Firebase, Material)
 │   ├── google-services.json  ← 🔥 YOU must add this
 │   └── src/main/
 │       ├── AndroidManifest.xml
-│       ├── java/.../MainActivity.java   ← ⭐ ALL logic
+│       ├── java/.../
+│       │   ├── JoinTeamActivity.java    ← 🔑 Login / Team selection logic
+│       │   └── MainActivity.java        ← ⭐ Core Dashboard logic
 │       └── res/
-│           ├── layout/activity_main.xml ← ⭐ UI layout
-│           ├── mipmap-anydpi-v26/       ← Adaptive icons
+│           ├── layout/
+│           │   ├── activity_join_team.xml
+│           │   └── activity_main.xml
 │           └── values/ (strings, colors, themes)
 ├── README.md
 ├── VIVA_QUESTIONS.md         ← 📚 Viva Q&A
@@ -80,13 +85,6 @@ LiveTaskNotes/
 3. Place `google-services.json` in `app/`
 4. Select device/emulator → Click ▶ Run
 
-```powershell
-# Alternative: Build from terminal
-cd "D:\Antigravity\expense tracker\LiveTaskNotes"
-.\gradlew.bat assembleDebug
-.\gradlew.bat installDebug
-```
-
 ---
 
 ## 🐛 Troubleshooting
@@ -95,9 +93,9 @@ cd "D:\Antigravity\expense tracker\LiveTaskNotes"
 |---------|----------|
 | `google-services.json not found` | Place inside `app/` folder |
 | Firebase permission denied | Set DB rules to test mode |
-| `<adaptive-icon> error` | Icons must be in `mipmap-anydpi-v26/` |
+| Missing tasks when switching teams | Ensure you are logging out and entering the exact 6-digit code |
 | Gradle sync failed | File → Invalidate Caches → Restart |
 
 ---
 
-*Built with ❤️ using Firebase Realtime Database + Android SDK 34 + AGP 8.13.2*
+*Built with ❤️ using Firebase Realtime Database + Android SDK 34*
